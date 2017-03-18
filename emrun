@@ -1325,8 +1325,8 @@ def main():
     else:
       logv('Web server root directory: ' + os.path.abspath('.'))
 
-  if options.android:
-    if not options.no_browser:
+  if not options.no_browser:
+    if options.android:
       if not options.browser:
         loge("Running on Android requires that you explicitly specify the browser to run with --browser <id>. Run emrun --android --list_browsers to obtain a list of installed browsers you can use.")
         return 1
@@ -1362,44 +1362,44 @@ def main():
         url = url.replace('&', '\\&')
       browser = [ADB, 'shell', 'am', 'start', '-a', 'android.intent.action.VIEW', '-n', browser_app, '-d', url]
       processname_killed_atexit = browser_app[:browser_app.find('/')]
-  else: #Launching a web page on local system.
-    if options.browser:
-      # Be resilient to quotes and whitespace
-      options.browser = options.browser.strip()
-      if (options.browser.startswith('"') and options.browser.endswith('"')) or (options.browser.startswith("'") and options.browser.endswith("'")):
-        options.browser = options.browser[1:-1].strip()
-    browser = find_browser(str(options.browser))
-    if not browser:
-      loge('Unable to find browser "' + str(options.browser) + '"! Check the correctness of the passed --browser=xxx parameter!')
-      return 1
-    browser_exe = browser[0]
-    browser_args = []
+    else: #Launching a web page on local system.
+      if options.browser:
+        # Be resilient to quotes and whitespace
+        options.browser = options.browser.strip()
+        if (options.browser.startswith('"') and options.browser.endswith('"')) or (options.browser.startswith("'") and options.browser.endswith("'")):
+          options.browser = options.browser[1:-1].strip()
+      browser = find_browser(str(options.browser))
+      if not browser:
+        loge('Unable to find browser "' + str(options.browser) + '"! Check the correctness of the passed --browser=xxx parameter!')
+        return 1
+      browser_exe = browser[0]
+      browser_args = []
 
-    if 'safari' in browser_exe.lower():
-      # Safari has a bug that a command line 'Safari http://page.com' does not launch that page,
-      # but instead launches 'file:///http://page.com'. To remedy this, must use the open -a command
-      # to run Safari, but unfortunately this will end up spawning Safari process detached from emrun.
-      if OSX:
-        browser = ['open', '-a', 'Safari'] + (browser[1:] if len(browser) > 1 else [])
+      if 'safari' in browser_exe.lower():
+        # Safari has a bug that a command line 'Safari http://page.com' does not launch that page,
+        # but instead launches 'file:///http://page.com'. To remedy this, must use the open -a command
+        # to run Safari, but unfortunately this will end up spawning Safari process detached from emrun.
+        if OSX:
+          browser = ['open', '-a', 'Safari'] + (browser[1:] if len(browser) > 1 else [])
 
-      processname_killed_atexit = 'Safari'
-    elif 'chrome' in browser_exe.lower():
-      processname_killed_atexit = 'chrome'
-      browser_args = ['--incognito', '--enable-nacl', '--enable-pnacl', '--disable-restore-session-state', '--enable-webgl', '--no-default-browser-check', '--no-first-run', '--allow-file-access-from-files']
-  #    if options.no_server:
-  #      browser_args += ['--disable-web-security']
-    elif 'firefox' in browser_exe.lower():
-      processname_killed_atexit = 'firefox'
-    elif 'iexplore' in browser_exe.lower():
-      processname_killed_atexit = 'iexplore'
-      browser_args = ['-private']
-    elif 'opera' in browser_exe.lower():
-      processname_killed_atexit = 'opera'
+        processname_killed_atexit = 'Safari'
+      elif 'chrome' in browser_exe.lower():
+        processname_killed_atexit = 'chrome'
+        browser_args = ['--incognito', '--enable-nacl', '--enable-pnacl', '--disable-restore-session-state', '--enable-webgl', '--no-default-browser-check', '--no-first-run', '--allow-file-access-from-files']
+    #    if options.no_server:
+    #      browser_args += ['--disable-web-security']
+      elif 'firefox' in browser_exe.lower():
+        processname_killed_atexit = 'firefox'
+      elif 'iexplore' in browser_exe.lower():
+        processname_killed_atexit = 'iexplore'
+        browser_args = ['-private']
+      elif 'opera' in browser_exe.lower():
+        processname_killed_atexit = 'opera'
 
-    # In Windows cmdline, & character delimits multiple commmands, so must use ^ to escape them.
-    if browser_exe == 'cmd':
-      url = url.replace('&', '^&')
-    browser += browser_args + [url]
+      # In Windows cmdline, & character delimits multiple commmands, so must use ^ to escape them.
+      if browser_exe == 'cmd':
+        url = url.replace('&', '^&')
+      browser += browser_args + [url]
 
   if options.kill_on_start:
     pname = processname_killed_atexit
